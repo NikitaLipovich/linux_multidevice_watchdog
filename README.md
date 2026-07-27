@@ -41,3 +41,12 @@ python -c "import sys;sys.path.insert(0,'src');from svc_watch import config;conf
 - `docs/ARCHITECTURE.md`, `docs/PROTOCOL.md`, `docs/CONFIG_GUIDE.md`, `docs/EMBEDDING.md`, `docs/LOGGING.md`, `docs/CHEATSHEET.md`
 - `docs/design/` — the design spec (variability axes, framework rules, v1→v2 trace)
 - `daemon/BUILD.md` — build the C observer
+
+
+## Todo
+- align restart bug service
+- refactor system
+- memory utilization service
+- config rules for memory utilization service
+- interact l3 level for emebedded interactions not only for service/process
+- monitoring (Azure/AWS/low cost expand with Kubernetes)
