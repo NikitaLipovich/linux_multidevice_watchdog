@@ -1,0 +1,45 @@
+// process_block.jsonc — a NEW process "vision", ready to paste into the "processes" map of
+// svc_watch.conf. It reuses the existing ladders catalog (soft_only / escalate_std /
+// process_only) — the restart_process verb inside escalate_std targets THIS process (vision),
+// never unified: escalation is addressed by nesting, so a cross-process misfire is impossible.
+//
+// Rules to remember (see svc_watch/README.md → "The config — logic"):
+//  - service names are GLOBALLY unique (Rule 7): cam_main / cam_aux must not clash with
+//    udp_logger / data_uploader / config_server / ws_bridge.
+//  - P1_all_pulses_lost only makes sense with >= 2 services (Rule 11); this process has two.
+//  - a P-level ladder must be restart_process-only (Rule 16) — @process_only qualifies.
+{
+  "vision": {
+    "launch": {
+      "type": "init_script",
+      "script": "/etc/init.d/vision",              // restart_process runs: sh /etc/init.d/vision restart
+      "pidfile": "/tmp/vision.pid",                // launcher writes it; observer reads age → fresh-gate
+      "grace": { "type": "fixed", "ms": 90000 },
+      "restart_rate_limit": { "max": 5, "per_ms": 600000, "on_exceeded": "cooldown", "cooldown_ms": 300000 }
+    },
+    "supervisor": {
+      "poll_ms": 1000,
+      "stop_timeout_ms": 20000,
+      "min_stable_ms": 5000,
+      "max_consecutive_start_failures": 5,
+      "backoff": { "start_ms": 1000, "factor": 2, "cap_ms": 10000 },
+      "log": { "file": "/mnt/sda1/crash_logs/vision.log", "rotate_kb": 1024, "keep": 7, "fallbacks": [] }
+    },
+    "watch": {
+      "P1_all_pulses_lost": { "mode": "act", "ladder": "@process_only" },
+      "P2_request_stuck":   { "mode": "act", "ladder": "@process_only" }
+    },
+    "services": {
+      "cam_main": {
+        "start": { "type": "python", "entry": "vision_process:start_cam_main" },
+        "signals": { "pulse": { "from": "loop", "every_ms": 5000 } },
+        "watch":   { "L1_pulse_lost": { "mode": "act", "dead_after_ms": 15000, "ladder": "@escalate_std" } }
+      },
+      "cam_aux": {
+        "start": { "type": "python", "entry": "vision_process:start_cam_aux" },
+        "signals": { "pulse": { "from": "loop", "every_ms": 5000 } },
+        "watch":   { "L1_pulse_lost": { "mode": "act", "dead_after_ms": 15000, "ladder": "@escalate_std" } }
+      }
+    }
+  }
+}

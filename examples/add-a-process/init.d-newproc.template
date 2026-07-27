@@ -1,0 +1,26 @@
+#!/bin/sh /etc/rc.common
+# /etc/init.d/vision — a svc_watch-supervised process under procd (TEMPLATE).
+# procd respawns the process if it dies; svc_watchdog (the C observer) restarts it via this same
+# script when restart_process fires: `sh /etc/init.d/vision restart`.
+#
+# Deploy: copy to /etc/init.d/vision on the router, `chmod +x`, then
+#   /etc/init.d/vision enable && /etc/init.d/vision start
+
+START=97          # start after the network / SD; before nothing critical depends on it
+STOP=12
+USE_PROCD=1
+
+RD=/opt/svc-watch                  # your deploy dir: holds the process script + the svc_watch package (on PYTHONPATH)
+PROG=$RD/vision_process.py         # your process's script (copy examples/add-a-process/vision_process.py and adapt)
+PIDFILE=/tmp/vision.pid            # MUST equal processes.vision.launch.pidfile in svc_watch.conf
+
+start_service() {
+    procd_open_instance vision
+    procd_set_param command /usr/bin/python3 "$PROG"
+    # WD_CONFIG points the process at the shared config; PYTHONPATH exposes the svc_watch package
+    procd_set_param env WD_CONFIG=/etc/svc_watch.conf PYTHONPATH="$RD"
+    procd_set_param pidfile "$PIDFILE"           # observer reads its age for the fresh-gate
+    procd_set_param respawn 3600 5 5             # throttle: >5 restarts in 3600s → back off
+    procd_set_param stderr 1                     # traceback → logread
+    procd_close_instance
+}

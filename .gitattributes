@@ -1,0 +1,8 @@
+# This repo's scripts and payload target a Linux/MIPS router — keep LF everywhere on checkout,
+# so shell scripts and configs never get CRLF-corrupted regardless of the developer's OS.
+* text=auto eol=lf
+
+# Binary artifacts (should be gitignored anyway; belt-and-suspenders):
+*.mipsel binary
+*.png binary
+*.jpg binary

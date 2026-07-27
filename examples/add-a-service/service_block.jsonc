@@ -1,0 +1,22 @@
+// service_block.jsonc — a NEW service "telemetry_relay" to ADD to an EXISTING process.
+// Paste it into that process's "services" map (e.g. processes.unified.services) in
+// svc_watch.conf. It reuses the existing ladders catalog — nothing else in the config changes.
+//
+// Rules to remember (see svc_watch/README.md → "The config — logic"):
+//   - service names are GLOBALLY unique across ALL processes (validator Rule 7): telemetry_relay
+//     must not clash with any other service name anywhere.
+//   - a service MUST declare signals.pulse + watch.L1_pulse_lost (they are paired, Rule 5).
+//   - dead_after_ms >= 3 * every_ms (Rule 6).
+//
+// This one uses from:"loop" — the service's own work loop sends the pulse. For a service that
+// has no loop of its own (e.g. an HTTP listener), use from:"probe" instead and give it a port:
+//   "port": 8100,
+//   "signals": { "pulse": { "from": "probe", "every_ms": 5000,
+//                           "probe": { "type": "tcp", "port": "@port", "timeout_ms": 2000 } } }
+{
+  "telemetry_relay": {
+    "start":   { "type": "python", "entry": "run_services:start_telemetry_relay" },
+    "signals": { "pulse": { "from": "loop", "every_ms": 5000 } },
+    "watch":   { "L1_pulse_lost": { "mode": "act", "dead_after_ms": 15000, "ladder": "@escalate_std" } }
+  }
+}

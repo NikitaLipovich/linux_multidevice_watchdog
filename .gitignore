@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.venv/
+build/
+dist/
+
+# C build outputs (the observer is built from daemon/svc_watchdog.c)
+*.mipsel
+*.o
+daemon/svc_watchdog
+
+# Editor / backup junk
+*.bak
+*.bak_n1
+*~
